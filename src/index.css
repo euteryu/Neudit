@@ -2,35 +2,63 @@
 @plugin "@tailwindcss/typography";
 
 @theme {
-  /* We don't define static colors here anymore. 
-     We reference the CSS variables defined below. */
+  /* Dynamic Theme Variables */
 }
 
 /* --- THEME DEFINITIONS --- */
 
-/* 1. Default (Gray/Classic) */
+/* 1. Default (Neudit Gray) */
 :root {
   --color-neu-base: #e0e5ec;
   --color-neu-dark: #a3b1c6;
   --color-neu-light: #ffffff;
   --color-neu-text: #4a5568;
-
   --shadow-neu-flat: 9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgb(255 255 255 / 0.5);
   --shadow-neu-pressed: inset 6px 6px 10px 0 rgb(163 177 198 / 0.7), inset -6px -6px 10px 0 rgb(255 255 255 / 0.8);
 }
 
-/* 2. Glacier (Blueish) */
+/* 2. Glacier (Blue) */
 .theme-glacier {
-  --color-neu-base: #e4ebf5; /* Cool blue-grey */
-  --color-neu-dark: #bec8e4; /* Darker blue shadow */
+  --color-neu-base: #e4ebf5;
+  --color-neu-dark: #bec8e4;
   --color-neu-light: #ffffff;
   --color-neu-text: #3d4c53;
-
   --shadow-neu-flat: 9px 9px 16px rgb(190 200 228 / 0.6), -9px -9px 16px rgb(255 255 255 / 0.6);
   --shadow-neu-pressed: inset 6px 6px 10px 0 rgb(190 200 228 / 0.7), inset -6px -6px 10px 0 rgb(255 255 255 / 0.8);
 }
 
-/* Utility classes mapping variables to Tailwind */
+/* 3. Sepia (Coffee/Paper) */
+.theme-sepia {
+  --color-neu-base: #e8e0d5;
+  --color-neu-dark: #cbbba9;
+  --color-neu-light: #ffffff;
+  --color-neu-text: #5c4b3f;
+  --shadow-neu-flat: 9px 9px 16px rgb(173 159 144 / 0.6), -9px -9px 16px rgb(255 255 255 / 0.6);
+  --shadow-neu-pressed: inset 6px 6px 10px 0 rgb(173 159 144 / 0.7), inset -6px -6px 10px 0 rgb(255 255 255 / 0.8);
+}
+
+/* 4. Rouge (Rose/Pink) */
+.theme-rouge {
+  --color-neu-base: #f0e4e6;
+  --color-neu-dark: #d6bec2;
+  --color-neu-light: #ffffff;
+  --color-neu-text: #6d4c52;
+  --shadow-neu-flat: 9px 9px 16px rgb(200 180 185 / 0.6), -9px -9px 16px rgb(255 255 255 / 0.7);
+  --shadow-neu-pressed: inset 6px 6px 10px 0 rgb(200 180 185 / 0.7), inset -6px -6px 10px 0 rgb(255 255 255 / 0.9);
+}
+
+/* 5. Rainbow (Holographic Gray) */
+.theme-rainbow {
+  --color-neu-base: #ecf0f3; /* Very light cool gray */
+  --color-neu-dark: #d1d9e6;
+  --color-neu-light: #ffffff;
+  --color-neu-text: #4a5568;
+  /* We use colored shadows to create the rainbow effect */
+  --shadow-neu-flat: 9px 9px 16px rgba(0, 255, 255, 0.15), -9px -9px 16px rgba(255, 0, 128, 0.1);
+  --shadow-neu-pressed: inset 6px 6px 10px 0 rgba(0, 255, 255, 0.1), inset -6px -6px 10px 0 rgba(255, 0, 128, 0.1);
+}
+
+/* Utility Mapping */
 .bg-neu-base { background-color: var(--color-neu-base); }
 .text-neu-text { color: var(--color-neu-text); }
 .shadow-neu-flat { box-shadow: var(--shadow-neu-flat); }
@@ -40,17 +68,13 @@ body {
   background-color: var(--color-neu-base);
   color: var(--color-neu-text);
   overflow: hidden;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: background-color 0.5s ease, color 0.5s ease, box-shadow 0.5s ease;
 }
 
-textarea {
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-}
-
+textarea { font-family: 'Consolas', 'Monaco', 'Courier New', monospace; }
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background-color: var(--color-neu-dark); opacity: 0.3; border-radius: 999px; }
-
 blockquote {
   border-left: 5px solid var(--color-neu-dark) !important;
   background-color: rgba(0,0,0,0.03);
