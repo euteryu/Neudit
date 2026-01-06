@@ -1,16 +1,14 @@
 {
-  "$schema": "https://schema.tauri.app/config/2",
-  "productName": "neudit",
+  "productName": "neudit-md",
   "version": "0.1.0",
-  "identifier": "com.minse.neudit",
+  "identifier": "com.minse.neudit-md",
   "build": {
     "beforeDevCommand": "npm run dev",
-    "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "npm run build",
+    "devUrl": "http://localhost:1420",
     "frontendDist": "../dist"
   },
   "app": {
-    "withGlobalTauri": true,
     "windows": [
       {
         "title": "Neudit MD",
@@ -22,7 +20,8 @@
       }
     ],
     "security": {
-      "csp": null
+      "csp": null,
+      "capabilities": ["default"] 
     }
   },
   "bundle": {

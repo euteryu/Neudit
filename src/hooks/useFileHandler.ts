@@ -1,17 +1,23 @@
 // @ts-nocheck
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react'; // Added useRef
 import { listen } from '@tauri-apps/api/event';
 import { readTextFile, writeTextFile } from '@tauri-apps/plugin-fs'; 
 import { open, save } from '@tauri-apps/plugin-dialog';
-import { getCurrentWindow } from '@tauri-apps/api/window';
 
 export const useFileHandler = () => {
   const [content, setContent] = useState('# Welcome to Neudit MD\nDrag a file here or open one.');
-  const [savedContent, setSavedContent] = useState('# Welcome to Neudit MD\nDrag a file here or open one.'); // Track saved state
+  const [savedContent, setSavedContent] = useState('# Welcome to Neudit MD\nDrag a file here or open one.'); 
   const [filePath, setFilePath] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Derived state: true if content differs from saved version
+  // FIX: Use a Ref to track live content for async handlers
+  const contentRef = useRef(content);
+  
+  // Keep Ref in sync with State
+  useEffect(() => {
+    contentRef.current = content;
+  }, [content]);
+
   const isDirty = content !== savedContent;
 
   const loadFile = async (path: string) => {
@@ -22,15 +28,18 @@ export const useFileHandler = () => {
       setSavedContent(text); // Reset dirty state
     } catch (e) {
       console.error("Failed to read file", e);
+      alert("Failed to load file.");
     }
   };
 
   const handleOpenFile = async () => {
     try {
       const selected = await open({
+        multiple: false,
         filters: [{ name: 'Markdown', extensions: ['md', 'markdown'] }]
       });
       if (selected) {
+        // Handle both string and array return types safely
         const path = Array.isArray(selected) ? selected[0] : selected;
         if (path) loadFile(path);
       }
@@ -39,18 +48,24 @@ export const useFileHandler = () => {
 
   const handleSave = async () => {
     try {
+      // FIX: Use contentRef.current to ensure we save the LATEST text
+      const textToSave = contentRef.current;
+
       if (filePath) {
-        await writeTextFile(filePath, content);
-        setSavedContent(content); // Sync states
+        await writeTextFile(filePath, textToSave);
+        setSavedContent(textToSave); // Sync saved state
       } else {
         const savePath = await save({ filters: [{ name: 'Markdown', extensions: ['md'] }] });
         if (savePath) {
-          await writeTextFile(savePath, content);
+          await writeTextFile(savePath, textToSave);
           setFilePath(savePath);
-          setSavedContent(content); // Sync states
+          setSavedContent(textToSave);
         }
       }
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err); 
+      alert("Failed to save file.");
+    }
   };
 
   // Drag and Drop Listeners
@@ -93,7 +108,7 @@ export const useFileHandler = () => {
     setContent,
     filePath,
     isDragging,
-    isDirty, // Export this
+    isDirty,
     handleOpenFile,
     handleSave,
     loadFile

@@ -8,6 +8,7 @@
     "fs:default",
     "fs:allow-mkdir",
     "fs:allow-write-file",
+    "fs:allow-write-text-file",
     "fs:allow-read-text-file",
     "fs:allow-copy-file",
     "fs:allow-exists",
@@ -19,7 +20,7 @@
     "core:window:allow-start-dragging",
     {
       "identifier": "fs:scope",
-      "allow": ["$HOME/**"]
+      "allow": ["**"]
     }
   ]
 }
