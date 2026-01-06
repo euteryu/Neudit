@@ -1,88 +1,99 @@
 // @ts-nocheck
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
-import 'katex/dist/katex.min.css'; 
-import { readFile } from '@tauri-apps/plugin-fs'; // Import Binary Reader
+import 'katex/dist/katex.min.css';
+import { readFile } from '@tauri-apps/plugin-fs';
 
-// --- CUSTOM IMAGE COMPONENT ---
-// This handles loading local files into Blob URLs bypassing asset.localhost
-const LocalImage = ({ src, alt, filePath }: { src?: string, alt?: string, filePath: string | null }) => {
+// --- 1. GLOBAL CACHE (The Anti-Flicker Mechanism) ---
+// We store Blob URLs keyed by the full file path. 
+// This ensures that if the component remounts, we grab the image 
+// instantly from memory instead of reading from disk again.
+const blobCache = new Map<string, string>();
+
+// --- 2. CONTEXT ---
+// Used to pass 'filePath' deep into the image component
+const ViewerContext = React.createContext<{ filePath: string | null }>({ filePath: null });
+
+// --- 3. STABLE COMPONENT DEFINITION ---
+// Defined OUTSIDE Viewer so React doesn't destroy/recreate it on every keystroke
+const LocalImage = ({ src, alt, title }: any) => {
+  const { filePath } = useContext(ViewerContext);
   const [imageSrc, setImageSrc] = useState<string | undefined>(undefined);
+  const isMounted = useRef(true);
 
   useEffect(() => {
-    let active = true;
-    let objectUrl: string | null = null;
-
-    const loadImage = async () => {
+    isMounted.current = true;
+    
+    const load = async () => {
       if (!src) return;
-      
-      // 1. If it's a web URL, just show it
+
+      // A. Web URLs -> Pass through
       if (src.startsWith('http://') || src.startsWith('https://')) {
         setImageSrc(src);
         return;
       }
 
-      // 2. If it's local, we need to resolve the path manually
+      // B. Local Files -> Load via Binary + Blob
       if (filePath) {
         try {
-           // Normalize Path: Windows prefers Backslashes, but JS prefers Forward. 
-           // We'll standardise to Forward Slashes for calculation, then OS specific for reading if needed.
-           // However, Tauri v2's fs plugin usually handles forward slashes fine on Windows.
-           
-           // A. Get Directory of MD file
+           // Normalize Path Logic
            const normalizedFilePath = filePath.replace(/\\/g, '/');
            const lastSlash = normalizedFilePath.lastIndexOf('/');
            const dir = normalizedFilePath.substring(0, lastSlash);
 
-           // B. Clean the incoming src (remove ./ or leading /)
            let cleanSrc = src.replace(/\\/g, '/');
            if (cleanSrc.startsWith('./')) cleanSrc = cleanSrc.slice(2);
            if (cleanSrc.startsWith('/')) cleanSrc = cleanSrc.slice(1);
 
-           // C. Construct Absolute Path
            const fullPath = `${dir}/${cleanSrc}`;
 
-           // D. Read File as Binary
+           // CHECK CACHE: If we loaded this before, use it INSTANTLY
+           if (blobCache.has(fullPath)) {
+             setImageSrc(blobCache.get(fullPath));
+             return;
+           }
+
+           // If not in cache, read from disk
            const data = await readFile(fullPath);
-           
-           // E. Create Blob URL
            const blob = new Blob([data]);
-           objectUrl = URL.createObjectURL(blob);
+           const url = URL.createObjectURL(blob);
            
-           if (active) setImageSrc(objectUrl);
+           // Store in cache
+           blobCache.set(fullPath, url);
+           
+           if (isMounted.current) setImageSrc(url);
 
         } catch (err) {
-          console.error("Failed to load image:", src, err);
-          // Optional: Set a placeholder or keep undefined
+          console.error("Image load error:", src);
         }
       }
     };
 
-    loadImage();
+    load();
 
-    return () => {
-      active = false;
-      if (objectUrl) URL.revokeObjectURL(objectUrl); // Cleanup memory
-    };
-  }, [src, filePath]);
+    return () => { isMounted.current = false; };
+  }, [src, filePath]); 
 
   return (
     <img 
       src={imageSrc || ""} 
       alt={alt} 
-      className={imageSrc ? "opacity-100 transition-opacity" : "opacity-0"} 
-      style={{ maxWidth: '100%', borderRadius: '8px' }}
+      title={title}
+      className="max-w-full rounded-lg my-4 shadow-sm"
+      // Smooth fade-in to mask any tiny loading gaps
+      style={{ opacity: imageSrc ? 1 : 0, transition: 'opacity 0.2s ease-in' }} 
     />
   );
 };
 
-// --- VIEWER COMPONENT ---
+// --- 4. VIEWER COMPONENT ---
 export const Viewer = ({ content, filePath, mode }) => {
   const [debouncedContent, setDebouncedContent] = useState(content);
 
+  // Debounce typing updates
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedContent(content);
@@ -91,17 +102,21 @@ export const Viewer = ({ content, filePath, mode }) => {
   }, [content]);
 
   return (
-    <div className={`prose prose-slate max-w-none p-8 pb-20 transition-colors duration-300 ${mode === 'view' ? 'bg-white' : 'bg-neu-base brightness-105'}`}>
-      <ReactMarkdown 
-        remarkPlugins={[remarkMath]}
-        rehypePlugins={[rehypeKatex, rehypeRaw]}
-        components={{
-          // Override the default img tag with our smart loader
-          img: ({node, ...props}) => <LocalImage {...props} filePath={filePath} />
-        }}
-      >
-        {debouncedContent}
-      </ReactMarkdown>
-    </div>
+    // Wrap in Context Provider
+    <ViewerContext.Provider value={{ filePath }}>
+        <div className={`prose prose-slate max-w-none p-8 pb-20 transition-colors duration-300 ${mode === 'view' ? 'bg-white' : 'bg-neu-base brightness-105'}`}>
+            <ReactMarkdown 
+                remarkPlugins={[remarkMath]}
+                rehypePlugins={[rehypeKatex, rehypeRaw]}
+                components={{
+                    // Pass the STABLE component reference.
+                    // DO NOT write "img: (props) => ..." here, that causes the flicker!
+                    img: LocalImage 
+                }}
+            >
+                {debouncedContent}
+            </ReactMarkdown>
+        </div>
+    </ViewerContext.Provider>
   );
 };
