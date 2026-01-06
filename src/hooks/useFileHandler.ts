@@ -7,14 +7,19 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 
 export const useFileHandler = () => {
   const [content, setContent] = useState('# Welcome to Neumorph MD\nDrag a file here or open one.');
+  const [savedContent, setSavedContent] = useState('# Welcome to Neumorph MD\nDrag a file here or open one.'); // Track saved state
   const [filePath, setFilePath] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Derived state: true if content differs from saved version
+  const isDirty = content !== savedContent;
 
   const loadFile = async (path: string) => {
     try {
       const text = await readTextFile(path);
       setFilePath(path);
       setContent(text);
+      setSavedContent(text); // Reset dirty state
     } catch (e) {
       console.error("Failed to read file", e);
     }
@@ -36,11 +41,13 @@ export const useFileHandler = () => {
     try {
       if (filePath) {
         await writeTextFile(filePath, content);
+        setSavedContent(content); // Sync states
       } else {
         const savePath = await save({ filters: [{ name: 'Markdown', extensions: ['md'] }] });
         if (savePath) {
           await writeTextFile(savePath, content);
           setFilePath(savePath);
+          setSavedContent(content); // Sync states
         }
       }
     } catch (err) { console.error(err); }
@@ -86,6 +93,7 @@ export const useFileHandler = () => {
     setContent,
     filePath,
     isDragging,
+    isDirty, // Export this
     handleOpenFile,
     handleSave,
     loadFile
