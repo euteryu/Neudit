@@ -23,7 +23,7 @@ export const Workspace = ({ mode, content, setContent, filePath, zoom, scrollHoo
     >
         {/* Left Panel (Editor) */}
         {mode !== 'view' && (
-            <div className={`flex flex-col rounded-2xl shadow-neu-pressed bg-neu-base overflow-hidden transition-all ${mode === 'split' ? 'w-1/2' : 'w-full'}`}>
+            <div className={`editor-area flex flex-col rounded-2xl shadow-neu-pressed bg-neu-base overflow-hidden transition-all ${mode === 'split' ? 'w-1/2' : 'w-full'}`}>
                 {mode === 'edit' ? (
                     <div className="h-full flex-1 overflow-hidden">
                             <Editor 
@@ -54,7 +54,7 @@ export const Workspace = ({ mode, content, setContent, filePath, zoom, scrollHoo
                 ref={rightScrollRef} 
                 onScroll={handleRightScroll} 
                 // Remove bg-[#fcfcfc] here, let the Viewer handle the background
-                className={`rounded-2xl shadow-neu-flat overflow-y-auto transition-all p-2 ${mode === 'split' ? 'w-1/2' : 'w-full'}`}
+                className={`viewer-area rounded-2xl shadow-neu-flat overflow-y-auto transition-all p-2 ${mode === 'split' ? 'w-1/2' : 'w-full'}`}
             >
                 {/* Pass mode down */}
                 <Viewer content={content} filePath={filePath} mode={mode} />

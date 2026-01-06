@@ -7,7 +7,7 @@ export const TitleBar = ({ title, isDirty }) => {
   const appWindow = getCurrentWindow();
 
   return (
-    <div className="h-10 flex items-center justify-between pl-4 pr-2 select-none bg-neu-base rounded-t-xl overflow-hidden shrink-0 z-50">
+    <div className="titlebar-area h-10 flex items-center justify-between pl-4 pr-2 select-none bg-neu-base rounded-t-xl overflow-hidden shrink-0 z-50">
       
       <div 
         data-tauri-drag-region 

@@ -83,3 +83,57 @@ blockquote {
   font-style: italic;
   border-radius: 0 8px 8px 0;
 }
+
+
+/* --- PRINT MEDIA QUERY --- */
+@media print {
+  /* 1. Hide UI Elements */
+  .titlebar-area, 
+  .toolbar-area, 
+  .editor-area,
+  .overlays { 
+    display: none !important; 
+  }
+
+  /* 2. Reset Main Containers (Remove shadows/borders/colors) */
+  body, #root, .app-container {
+    background-color: white !important;
+    height: auto !important;
+    width: 100% !important;
+    overflow: visible !important;
+    border: none !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    position: static !important;
+  }
+
+  /* 3. Position the Viewer to fill the page */
+  .viewer-area {
+    width: 100% !important;
+    height: auto !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    display: block !important;
+  }
+  
+  /* 4. Ensure Text is Black (for Themes) */
+  .prose {
+    color: black !important;
+    max-width: 100% !important;
+  }
+  
+  /* Fix Image sizes for print */
+  .prose img {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+}

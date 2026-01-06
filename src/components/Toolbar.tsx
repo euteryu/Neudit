@@ -25,7 +25,7 @@ export const Toolbar = ({
   onOpenHelp
 }: ToolbarProps) => {
   return (
-    <div className="flex items-center justify-between p-2 rounded-2xl shadow-neu-flat shrink-0 transition-all duration-300 z-30 relative">
+    <div className="toolbar-area flex items-center justify-between p-2 rounded-2xl shadow-neu-flat shrink-0 transition-all duration-300 z-30 relative">
       
       {/* LEFT: View Modes */}
       <div className="flex gap-3">
