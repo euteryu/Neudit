@@ -3,10 +3,83 @@ import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
-import rehypeRaw from 'rehype-raw'; // <--- NEW IMPORT
+import rehypeRaw from 'rehype-raw';
 import 'katex/dist/katex.min.css'; 
-import { convertFileSrc } from '@tauri-apps/api/core'; 
+import { readFile } from '@tauri-apps/plugin-fs'; // Import Binary Reader
 
+// --- CUSTOM IMAGE COMPONENT ---
+// This handles loading local files into Blob URLs bypassing asset.localhost
+const LocalImage = ({ src, alt, filePath }: { src?: string, alt?: string, filePath: string | null }) => {
+  const [imageSrc, setImageSrc] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    let active = true;
+    let objectUrl: string | null = null;
+
+    const loadImage = async () => {
+      if (!src) return;
+      
+      // 1. If it's a web URL, just show it
+      if (src.startsWith('http://') || src.startsWith('https://')) {
+        setImageSrc(src);
+        return;
+      }
+
+      // 2. If it's local, we need to resolve the path manually
+      if (filePath) {
+        try {
+           // Normalize Path: Windows prefers Backslashes, but JS prefers Forward. 
+           // We'll standardise to Forward Slashes for calculation, then OS specific for reading if needed.
+           // However, Tauri v2's fs plugin usually handles forward slashes fine on Windows.
+           
+           // A. Get Directory of MD file
+           const normalizedFilePath = filePath.replace(/\\/g, '/');
+           const lastSlash = normalizedFilePath.lastIndexOf('/');
+           const dir = normalizedFilePath.substring(0, lastSlash);
+
+           // B. Clean the incoming src (remove ./ or leading /)
+           let cleanSrc = src.replace(/\\/g, '/');
+           if (cleanSrc.startsWith('./')) cleanSrc = cleanSrc.slice(2);
+           if (cleanSrc.startsWith('/')) cleanSrc = cleanSrc.slice(1);
+
+           // C. Construct Absolute Path
+           const fullPath = `${dir}/${cleanSrc}`;
+
+           // D. Read File as Binary
+           const data = await readFile(fullPath);
+           
+           // E. Create Blob URL
+           const blob = new Blob([data]);
+           objectUrl = URL.createObjectURL(blob);
+           
+           if (active) setImageSrc(objectUrl);
+
+        } catch (err) {
+          console.error("Failed to load image:", src, err);
+          // Optional: Set a placeholder or keep undefined
+        }
+      }
+    };
+
+    loadImage();
+
+    return () => {
+      active = false;
+      if (objectUrl) URL.revokeObjectURL(objectUrl); // Cleanup memory
+    };
+  }, [src, filePath]);
+
+  return (
+    <img 
+      src={imageSrc || ""} 
+      alt={alt} 
+      className={imageSrc ? "opacity-100 transition-opacity" : "opacity-0"} 
+      style={{ maxWidth: '100%', borderRadius: '8px' }}
+    />
+  );
+};
+
+// --- VIEWER COMPONENT ---
 export const Viewer = ({ content, filePath, mode }) => {
   const [debouncedContent, setDebouncedContent] = useState(content);
 
@@ -17,46 +90,15 @@ export const Viewer = ({ content, filePath, mode }) => {
     return () => clearTimeout(handler);
   }, [content]);
 
-  const transformImageUri = (uri) => {
-    if (uri.startsWith('http') || uri.startsWith('https')) return uri;
-    
-    if (filePath) {
-      // 1. Get Directory of the MD file
-      // We accept both / and \ to be safe
-      const lastSlash = Math.max(filePath.lastIndexOf('\\'), filePath.lastIndexOf('/'));
-      const dir = filePath.substring(0, lastSlash);
-      
-      // 2. Clean up the incoming URI (remove ./ or leading /)
-      let cleanUri = uri;
-      if (cleanUri.startsWith('./')) cleanUri = cleanUri.slice(2);
-      if (cleanUri.startsWith('/')) cleanUri = cleanUri.slice(1);
-      
-      // 3. Construct absolute path
-      // IMPORTANT: convertFileSrc handles the OS specifics, 
-      // but we need to ensure we join them with the correct OS separator first.
-      const isWindows = filePath.includes('\\');
-      const sep = isWindows ? '\\' : '/';
-      
-      // On Windows, image.png might become .../assets\image.png
-      // We replace forward slashes in the URI with backslashes if on Windows
-      if (isWindows) {
-          cleanUri = cleanUri.replace(/\//g, '\\');
-      }
-
-      const fullPath = `${dir}${sep}${cleanUri}`;
-      
-      return convertFileSrc(fullPath);
-    }
-    return uri;
-  };
-
   return (
     <div className={`prose prose-slate max-w-none p-8 pb-20 transition-colors duration-300 ${mode === 'view' ? 'bg-white' : 'bg-neu-base brightness-105'}`}>
       <ReactMarkdown 
-        urlTransform={transformImageUri}
         remarkPlugins={[remarkMath]}
-        // ADD rehypeRaw here to render HTML tags (<img>) correctly
-        rehypePlugins={[rehypeKatex, rehypeRaw]} 
+        rehypePlugins={[rehypeKatex, rehypeRaw]}
+        components={{
+          // Override the default img tag with our smart loader
+          img: ({node, ...props}) => <LocalImage {...props} filePath={filePath} />
+        }}
       >
         {debouncedContent}
       </ReactMarkdown>
