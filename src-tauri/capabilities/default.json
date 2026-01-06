@@ -9,12 +9,17 @@
     "fs:allow-mkdir",
     "fs:allow-write-file",
     "fs:allow-read-text-file",
-    "fs:allow-home-read",
-    "fs:allow-home-write",
+    "fs:allow-copy-file",
+    "fs:allow-exists",
     "dialog:default",
     "core:window:allow-minimize",
     "core:window:allow-maximize",
     "core:window:allow-close",
-    "core:window:allow-center"
+    "core:window:allow-center",
+    "core:window:allow-start-dragging",
+    {
+      "identifier": "fs:scope",
+      "allow": ["$HOME/**"]
+    }
   ]
 }

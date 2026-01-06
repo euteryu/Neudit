@@ -3,11 +3,13 @@ import { useEffect } from 'react';
 
 interface HotkeyHandlers {
   onSave: () => void;
+  onOpen: () => void;
   onSearch: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
   onZoomReset: () => void;
   onEscape: () => void;
+  onToggleFocus: () => void;
 }
 
 export const useHotkeys = (handlers: HotkeyHandlers) => {
@@ -18,26 +20,34 @@ export const useHotkeys = (handlers: HotkeyHandlers) => {
         e.preventDefault();
         handlers.onSave();
       }
+      // OPEN: Ctrl + O
+      if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
+        e.preventDefault();
+        handlers.onOpen();
+      }
       // SEARCH: Ctrl + F
       if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
         e.preventDefault();
         handlers.onSearch();
       }
+      // FOCUS MODE: Ctrl + Shift + F
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'f') {
+        e.preventDefault();
+        handlers.onToggleFocus();
+      }
       // ESCAPE
       if (e.key === 'Escape') {
         handlers.onEscape();
       }
-      // ZOOM IN
+      // ZOOM Logic
       if ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '+')) {
         e.preventDefault();
         handlers.onZoomIn();
       }
-      // ZOOM OUT
       if ((e.ctrlKey || e.metaKey) && (e.key === '-')) {
         e.preventDefault();
         handlers.onZoomOut();
       }
-      // ZOOM RESET
       if ((e.ctrlKey || e.metaKey) && (e.key === '0')) {
         e.preventDefault();
         handlers.onZoomReset();
@@ -53,7 +63,6 @@ export const useHotkeys = (handlers: HotkeyHandlers) => {
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('wheel', handleWheel, { passive: false });
-    
     return () => {
         window.removeEventListener('keydown', handleKeyDown);
         window.removeEventListener('wheel', handleWheel);
