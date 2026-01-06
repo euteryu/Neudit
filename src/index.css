@@ -19,7 +19,6 @@ body {
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { @apply bg-neu-dark/30 rounded-full; }
 
-/* FIX: Force blockquote styling to be visible */
 blockquote {
   border-left: 5px solid var(--color-neu-dark) !important;
   background-color: rgba(0,0,0,0.03);
@@ -27,4 +26,8 @@ blockquote {
   margin: 1rem 0 !important;
   font-style: italic;
   border-radius: 0 8px 8px 0;
+}
+
+textarea {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
 }

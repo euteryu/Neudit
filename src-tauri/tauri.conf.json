@@ -13,9 +13,11 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "markdown-neumorph",
-        "width": 800,
-        "height": 600
+        "title": "Neudit MD",
+        "width": 1000,
+        "height": 800,
+        "decorations": false,
+        "transparent": true
       }
     ],
     "security": {

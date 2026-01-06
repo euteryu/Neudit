@@ -10,6 +10,10 @@
     "fs:allow-read-text-file",
     "fs:allow-write-text-file",
     "fs:allow-home-read",
-    "fs:allow-home-write"
+    "fs:allow-home-write",
+    "core:window:allow-minimize",
+    "core:window:allow-maximize",
+    "core:window:allow-close",
+    "core:window:allow-center"
   ]
 }
