@@ -53,9 +53,11 @@ export const Workspace = ({ mode, content, setContent, filePath, zoom, scrollHoo
             <div 
                 ref={rightScrollRef} 
                 onScroll={handleRightScroll} 
-                className={`rounded-2xl shadow-neu-flat bg-[#fcfcfc] overflow-y-auto transition-all p-2 ${mode === 'split' ? 'w-1/2' : 'w-full'}`}
+                // Remove bg-[#fcfcfc] here, let the Viewer handle the background
+                className={`rounded-2xl shadow-neu-flat overflow-y-auto transition-all p-2 ${mode === 'split' ? 'w-1/2' : 'w-full'}`}
             >
-                <Viewer content={content} filePath={filePath} />
+                {/* Pass mode down */}
+                <Viewer content={content} filePath={filePath} mode={mode} />
             </div>
         )}
     </div>

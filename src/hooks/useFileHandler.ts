@@ -6,8 +6,8 @@ import { open, save } from '@tauri-apps/plugin-dialog';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
 export const useFileHandler = () => {
-  const [content, setContent] = useState('# Welcome to Neumorph MD\nDrag a file here or open one.');
-  const [savedContent, setSavedContent] = useState('# Welcome to Neumorph MD\nDrag a file here or open one.'); // Track saved state
+  const [content, setContent] = useState('# Welcome to Neudit MD\nDrag a file here or open one.');
+  const [savedContent, setSavedContent] = useState('# Welcome to Neudit MD\nDrag a file here or open one.'); // Track saved state
   const [filePath, setFilePath] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
 
