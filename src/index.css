@@ -1,0 +1,32 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* 
+  In Tailwind v4, we define the theme right here.
+  This creates the bg-neu-base, shadow-neu-flat, etc. classes automatically.
+*/
+@theme {
+  --color-neu-base: #e0e5ec;
+  --color-neu-dark: #a3b1c6;
+  --color-neu-light: #ffffff;
+  --color-neu-text: #4a5568;
+
+  --shadow-neu-flat: 9px 9px 16px rgb(163 177 198 / 0.6), -9px -9px 16px rgb(255 255 255 / 0.5);
+  --shadow-neu-pressed: inset 6px 6px 10px 0 rgb(163 177 198 / 0.7), inset -6px -6px 10px 0 rgb(255 255 255 / 0.8);
+}
+
+/* Custom styles using the variables defined above */
+body {
+  @apply bg-neu-base text-neu-text overflow-hidden;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-neu-dark/30 rounded-full;
+}
