@@ -1,45 +1,38 @@
 // @ts-nocheck
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
+
+// Hooks (Logic)
 import { useFileHandler } from './hooks/useFileHandler'; 
+import { useScrollSync } from './hooks/useScrollSync';
+import { useHotkeys } from './hooks/useHotkeys';
+
+// Components (UI)
 import { TitleBar } from './components/TitleBar';
 import { Toolbar } from './components/Toolbar';
-import { Editor } from './components/Editor';
-import { RawEditor } from './components/RawEditor';
-import { Viewer } from './components/Viewer';
-import { SearchReplace } from './components/SearchReplace'; // Import new component
+import { Workspace } from './components/Workspace';
+import { SearchReplace } from './components/SearchReplace';
+import { ContextMenu } from './components/ContextMenu';
 
 function App() {
+  // 1. Logic & State Hooks
   const { content, setContent, filePath, isDragging, isDirty, handleOpenFile, handleSave } = useFileHandler();
+  const scrollHook = useScrollSync();
+  
+  // 2. UI State
   const [mode, setMode] = useState('split'); 
   const [zoom, setZoom] = useState(1); 
-  const [showSearch, setShowSearch] = useState(false); // Toggle Search Bar
+  const [showSearch, setShowSearch] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
+  const [theme, setTheme] = useState('default');
+  const [contextMenu, setContextMenu] = useState<{x: number, y: number} | null>(null);
 
-  // Scroll Sync Refs
-  const leftScrollRef = useRef<HTMLDivElement>(null);
-  const rightScrollRef = useRef<HTMLDivElement>(null);
-  const isSyncing = useRef(false);
-
-  const handleScroll = (sourceRef: any, targetRef: any) => {
-    if (!sourceRef.current || !targetRef.current || isSyncing.current) return;
-    isSyncing.current = true;
-    const source = sourceRef.current;
-    const target = targetRef.current;
-    
-    const maxSource = source.scrollHeight - source.clientHeight;
-    const maxTarget = target.scrollHeight - target.clientHeight;
-    
-    if (maxSource > 0 && maxTarget > 0) {
-        const percentage = source.scrollTop / maxSource;
-        target.scrollTop = percentage * maxTarget;
-    }
-    setTimeout(() => { isSyncing.current = false; }, 50);
-  };
-
+  // 3. Handlers
   const handleExportPDF = () => {
     const oldMode = mode;
-    setMode('view');
     const oldZoom = zoom;
+    setMode('view');
     setZoom(1);
+    setFocusMode(false);
     setTimeout(() => { 
         window.print(); 
         setMode(oldMode);
@@ -49,147 +42,73 @@ function App() {
 
   const handleReplaceAll = (find: string, replace: string) => {
     if(!find) return;
-    // Simple string replaceAll (case sensitive)
-    const newContent = content.replaceAll(find, replace);
-    setContent(newContent);
+    setContent(content.replaceAll(find, replace));
     setShowSearch(false);
   };
 
-  // Keyboard Shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // SAVE: Ctrl + S
-      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-        e.preventDefault();
-        handleSave();
-      }
+  const handleContextMenu = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY });
+  };
 
-      // SEARCH: Ctrl + F
-      if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-        e.preventDefault();
-        setShowSearch(prev => !prev);
-      }
+  // 4. Attach Hotkeys
+  useHotkeys({
+    onSave: handleSave,
+    onSearch: () => setShowSearch(prev => !prev),
+    onEscape: () => { if (!showSearch && focusMode) setFocusMode(false); },
+    onZoomIn: () => setZoom(z => Math.min(z + 0.1, 2.0)),
+    onZoomOut: () => setZoom(z => Math.max(z - 0.1, 0.5)),
+    onZoomReset: () => setZoom(1)
+  });
 
-      // ZOOM IN: Ctrl + = 
-      if ((e.ctrlKey || e.metaKey) && (e.key === '=' || e.key === '+')) {
-        e.preventDefault();
-        setZoom(z => Math.min(z + 0.1, 2.0));
-      }
-
-      // ZOOM OUT: Ctrl + -
-      if ((e.ctrlKey || e.metaKey) && (e.key === '-')) {
-        e.preventDefault();
-        setZoom(z => Math.max(z - 0.1, 0.5));
-      }
-
-      // RESET ZOOM: Ctrl + 0
-      if ((e.ctrlKey || e.metaKey) && (e.key === '0')) {
-        e.preventDefault();
-        setZoom(1);
-      }
-    };
-
-    const handleWheel = (e: WheelEvent) => {
-        if (e.ctrlKey) {
-            e.preventDefault();
-            if (e.deltaY < 0) {
-                setZoom(z => Math.min(z + 0.1, 2.0));
-            } else {
-                setZoom(z => Math.max(z - 0.1, 0.5));
-            }
-        }
-    }
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('wheel', handleWheel, { passive: false });
-    
-    return () => {
-        window.removeEventListener('keydown', handleKeyDown);
-        window.removeEventListener('wheel', handleWheel);
-    };
-  }, [handleSave]);
-
+  // 5. Render
   return (
-    <div className="h-screen flex flex-col bg-neu-base text-neu-text rounded-xl overflow-hidden border border-white/50 shadow-2xl">
+    <div 
+        onContextMenu={handleContextMenu}
+        className={`h-screen flex flex-col bg-neu-base text-neu-text rounded-xl overflow-hidden border border-white/50 shadow-2xl transition-all ${theme === 'glacier' ? 'theme-glacier' : ''}`}
+    >
       
-      {/* 
-        1. TitleBar: Static Size (No Zoom) 
-           We pass 'isDirty' to show the unsaved dot.
-      */}
-      <TitleBar 
-        title={filePath ? filePath.split(/[\\/]/).pop() : 'Untitled.md'} 
-        isDirty={isDirty}
-      />
+      {!focusMode && <TitleBar title={filePath ? filePath.split(/[\\/]/).pop() : 'Untitled.md'} isDirty={isDirty} />}
 
-      <div className="flex-1 flex flex-col p-4 gap-4 pt-2 relative h-0">
+      <div className={`flex-1 flex flex-col p-4 gap-4 relative h-0 ${focusMode ? 'pt-4' : 'pt-2'}`}>
         
-        {/* Drag Overlay */}
+        {/* Overlays */}
         {isDragging && (
             <div className="absolute inset-4 z-50 bg-neu-base/90 flex items-center justify-center border-4 border-dashed border-neu-dark/50 rounded-xl backdrop-blur-sm pointer-events-none">
                 <div className="text-2xl font-bold text-neu-text/70 animate-pulse">Drop Markdown File Here</div>
             </div>
         )}
+        {contextMenu && <ContextMenu x={contextMenu.x} y={contextMenu.y} onClose={() => setContextMenu(null)} />}
+        {showSearch && <SearchReplace onClose={() => setShowSearch(false)} onReplaceAll={handleReplaceAll} />}
+        {focusMode && (
+            <div className="absolute top-2 right-4 z-40 opacity-30 hover:opacity-100 transition-opacity">
+                <button onClick={() => setFocusMode(false)} className="text-xs text-neu-text bg-neu-base px-3 py-1 rounded-full shadow-neu-flat border border-white/50">Exit Focus (ESC)</button>
+            </div>
+        )}
 
-        {/* Search & Replace Modal (Overlay) */}
-        {showSearch && (
-            <SearchReplace 
-                onClose={() => setShowSearch(false)} 
-                onReplaceAll={handleReplaceAll}
+        {/* Toolbar */}
+        {!focusMode && (
+            <Toolbar 
+                mode={mode} 
+                setMode={setMode} 
+                onOpen={handleOpenFile} 
+                onSave={handleSave} 
+                onExport={handleExportPDF} 
+                onToggleFocus={() => setFocusMode(true)}
+                currentTheme={theme}
+                onToggleTheme={() => setTheme(prev => prev === 'default' ? 'glacier' : 'default')}
             />
         )}
 
-        {/* 2. Toolbar: Static Size (No Zoom) */}
-        <Toolbar 
-          mode={mode} 
-          setMode={setMode} 
-          onOpen={handleOpenFile} 
-          onSave={handleSave} 
-          onExport={handleExportPDF} 
+        {/* Main Workspace */}
+        <Workspace 
+            mode={mode}
+            content={content}
+            setContent={setContent}
+            filePath={filePath}
+            zoom={zoom}
+            scrollHook={scrollHook}
         />
-
-        {/* 
-           3. Panels: DYNAMIC ZOOM 
-           We move the style={{ zoom }} here.
-           Using 'origin-top-left' ensures it zooms naturally from the corner.
-        */}
-        <div 
-            className="flex-1 flex gap-4 overflow-hidden min-h-0 origin-top-left"
-            style={{ zoom: zoom }}
-        >
-            {mode !== 'view' && (
-                <div className={`flex flex-col rounded-2xl shadow-neu-pressed bg-neu-base overflow-hidden transition-all ${mode === 'split' ? 'w-1/2' : 'w-full'}`}>
-                    {mode === 'edit' ? (
-                        <div className="h-full flex-1 overflow-hidden">
-                             <Editor 
-                                content={content} 
-                                onChange={setContent} 
-                             />
-                        </div>
-                    ) : (
-                        <div className="h-full flex-1 relative">
-                            <div className="absolute inset-0">
-                                <RawEditor 
-                                    content={content} 
-                                    onChange={setContent} 
-                                    scrollRef={leftScrollRef}
-                                    onScroll={() => handleScroll(leftScrollRef, rightScrollRef)}
-                                />
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {(mode === 'view' || mode === 'split') && (
-                <div 
-                    ref={rightScrollRef}
-                    onScroll={() => handleScroll(rightScrollRef, leftScrollRef)}
-                    className={`rounded-2xl shadow-neu-flat bg-[#fcfcfc] overflow-y-auto transition-all p-2 ${mode === 'split' ? 'w-1/2' : 'w-full'}`}
-                >
-                    <Viewer content={content} filePath={filePath} />
-                </div>
-            )}
-        </div>
       </div>
     </div>
   );

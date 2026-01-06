@@ -2,6 +2,14 @@
 @plugin "@tailwindcss/typography";
 
 @theme {
+  /* We don't define static colors here anymore. 
+     We reference the CSS variables defined below. */
+}
+
+/* --- THEME DEFINITIONS --- */
+
+/* 1. Default (Gray/Classic) */
+:root {
   --color-neu-base: #e0e5ec;
   --color-neu-dark: #a3b1c6;
   --color-neu-light: #ffffff;
@@ -11,13 +19,37 @@
   --shadow-neu-pressed: inset 6px 6px 10px 0 rgb(163 177 198 / 0.7), inset -6px -6px 10px 0 rgb(255 255 255 / 0.8);
 }
 
+/* 2. Glacier (Blueish) */
+.theme-glacier {
+  --color-neu-base: #e4ebf5; /* Cool blue-grey */
+  --color-neu-dark: #bec8e4; /* Darker blue shadow */
+  --color-neu-light: #ffffff;
+  --color-neu-text: #3d4c53;
+
+  --shadow-neu-flat: 9px 9px 16px rgb(190 200 228 / 0.6), -9px -9px 16px rgb(255 255 255 / 0.6);
+  --shadow-neu-pressed: inset 6px 6px 10px 0 rgb(190 200 228 / 0.7), inset -6px -6px 10px 0 rgb(255 255 255 / 0.8);
+}
+
+/* Utility classes mapping variables to Tailwind */
+.bg-neu-base { background-color: var(--color-neu-base); }
+.text-neu-text { color: var(--color-neu-text); }
+.shadow-neu-flat { box-shadow: var(--shadow-neu-flat); }
+.shadow-neu-pressed { box-shadow: var(--shadow-neu-pressed); }
+
 body {
-  @apply bg-neu-base text-neu-text overflow-hidden;
+  background-color: var(--color-neu-base);
+  color: var(--color-neu-text);
+  overflow: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+textarea {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
 }
 
 ::-webkit-scrollbar { width: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { @apply bg-neu-dark/30 rounded-full; }
+::-webkit-scrollbar-thumb { background-color: var(--color-neu-dark); opacity: 0.3; border-radius: 999px; }
 
 blockquote {
   border-left: 5px solid var(--color-neu-dark) !important;
@@ -26,8 +58,4 @@ blockquote {
   margin: 1rem 0 !important;
   font-style: italic;
   border-radius: 0 8px 8px 0;
-}
-
-textarea {
-  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
 }

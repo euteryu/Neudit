@@ -9,6 +9,8 @@ import {
   Quote, Undo, Redo 
 } from 'lucide-react';
 import { NeuButton } from './NeuButton';
+import { useImagePaster } from '../hooks/useImagePaster';
+
 
 const MenuBar = ({ editor }) => {
   if (!editor) return null;
@@ -40,8 +42,10 @@ const MenuBar = ({ editor }) => {
   );
 };
 
-// UPDATED: Added 'onScroll' to props
-export const Editor = ({ content, onChange, scrollRef, onScroll }) => {
+
+export const Editor = ({ content, onChange, scrollRef, onScroll, filePath }) => {
+  const { saveImage } = useImagePaster(filePath);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -52,6 +56,28 @@ export const Editor = ({ content, onChange, scrollRef, onScroll }) => {
       attributes: {
         class: 'prose prose-slate max-w-none focus:outline-none prose-headings:font-bold prose-h1:text-3xl prose-h2:text-2xl prose-p:my-2 min-h-[50vh] px-2',
       },
+      // HANDLE PASTE IN TIPTAP
+      handlePaste: (view, event) => {
+        const items = event.clipboardData?.items;
+        if (!items) return false;
+
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf('image') !== -1) {
+            event.preventDefault();
+            const blob = items[i].getAsFile();
+            if (blob) {
+              saveImage(blob).then((markdownLink) => {
+                if (markdownLink) {
+                  // Insert text at current selection
+                  view.dispatch(view.state.tr.insertText(markdownLink));
+                }
+              });
+            }
+            return true; // Handled
+          }
+        }
+        return false; // Default behavior
+      }
     },
     onUpdate: ({ editor }) => {
       const md = editor.storage.markdown.getMarkdown();
